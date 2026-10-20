@@ -28,6 +28,10 @@ El archivo `render.yaml` define un worker permanente y PostgreSQL administrado. 
 
 El worker y la base incluidos usan planes de pago para que el bot no entre en suspensión. Antes de activar el despliegue, detén cualquier instancia local con `Ctrl + C`: Telegram solo permite una instancia consumiendo actualizaciones mediante long polling.
 
+## Despliegue gratuito en Oracle Cloud
+
+Para evitar Render, el proyecto incluye `Dockerfile`, `compose.production.yaml` y `.env.production.example` para una VM Always Free. Sigue [docs/ORACLE_CLOUD.md](docs/ORACLE_CLOUD.md). No subas el archivo `.env` ni claves SSH a GitHub.
+
 ## Operación de contenido
 
 Cada obra requiere `rightsConfirmed = true`, una referencia de licencia en `rightsReference` y un `telegramFileId` propio antes de publicarse. Guarda el identificador de archivo después de subir material autorizado al bot; no almacenes ni difundas URLs de servicios ajenos.
