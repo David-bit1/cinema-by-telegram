@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PlanCode {
+  BASIC
+  PLUS
+  PREMIUM
+  ULTRA
+}
+
+enum ContentType {
+  MOVIE
+  SERIES
+  ANIME
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+model User {
+  id          String         @id @default(cuid())
+  telegramId  BigInt         @unique
+  username    String?
+  firstName   String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  trialEndsAt DateTime?
+  subscriptions Subscription[]
+  payments    Payment[]
+  auditLogs   AuditLog[]
+  favorites   Favorite[]
+  searches    SearchHistory[]
+}
+
+model Plan {
+  id          String         @id @default(cuid())
+  code        PlanCode       @unique
+  name        String
+  description String
+  priceStars  Int
+  priceMxn    Int          @default(0)
+  benefits    Json         @default("[]")
+  enabled     Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  subscriptions Subscription[]
+  contents    Content[]
+}
+
+model Subscription {
+  id                    String             @id @default(cuid())
+  userId                String
+  planId                String
+  status                SubscriptionStatus @default(ACTIVE)
+  startsAt              DateTime           @default(now())
+  endsAt                DateTime
+  telegramChargeId      String?            @unique
+  autoRenew             Boolean            @default(false)
+  reminderSentAt        DateTime?
+  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                  Plan               @relation(fields: [planId], references: [id])
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  @@index([userId, status, endsAt])
+}
+
+model Content {
+  id              String      @id @default(cuid())
+  title           String
+  synopsis        String
+  type            ContentType
+  requiredPlan    PlanCode?
+  posterUrl       String?
+  genre           String?
+  releaseYear     Int?
+  telegramFileId  String?
+  rightsConfirmed Boolean     @default(false)
+  rightsReference String?
+  published       Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  seasons         Season[]
+  favorites       Favorite[]
+  plan            Plan?       @relation(fields: [requiredPlan], references: [code])
+
+  @@index([type, published])
+  @@index([genre, releaseYear])
+}
+
+model Season {
+  id        String    @id @default(cuid())
+  contentId String
+  number    Int
+  title     String?
+  content   Content   @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  episodes  Episode[]
+
+  @@unique([contentId, number])
+}
+
+model Episode {
+  id             String @id @default(cuid())
+  seasonId       String
+  number         Int
+  title          String
+  synopsis       String?
+  telegramFileId String?
+  season         Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@unique([seasonId, number])
+}
+
+model Payment {
+  id                    String   @id @default(cuid())
+  userId                String
+  planCode              PlanCode
+  amountStars           Int
+  invoicePayload        String   @unique
+  telegramChargeId      String?  @unique
+  providerChargeId      String?
+  successfulAt          DateTime?
+  createdAt             DateTime @default(now())
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  detail    String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+}
+
+model Favorite {
+  userId    String
+  contentId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@id([userId, contentId])
+}
+
+model SearchHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  query     String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
