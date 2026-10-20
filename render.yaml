@@ -24,6 +24,6 @@ services:
 databases:
   - name: cinema-by-telegram-db
     region: oregon
-    plan: 256mb
+    plan: 0.1c-256mb
     databaseName: streaming
     user: streaming
